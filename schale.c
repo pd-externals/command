@@ -113,7 +113,7 @@ static void schale_doit(void *z, t_binbuf *b)
 	    for (i = msg; i < emsg; i++)
 	    	if (at[i].a_type == A_DOLLAR || at[i].a_type == A_DOLLSYM)
 	    {
-	    	pd_error(x, "netreceive: got dollar sign in message");
+	    	pd_error(x, "shell: got dollar sign in message");
 		goto nodice;
 	    }
 	    if (at[msg].a_type == A_FLOAT)
@@ -146,6 +146,7 @@ void schale_read(t_schale *x, int fd)
 
      for (i=0;i<ret;i++)
        if (buf[i] == '\n') buf[i] = ';';
+       if (buf[i] == 'M') buf[i] = 'X';
      if (ret < 0)
        {
 	 error("schale: pipe read error");
@@ -188,7 +189,7 @@ static void schale_send(t_schale *x, t_symbol *s,int ac, t_atom *at)
 	  atom_string(at,tmp+size,MAXPDSTRING - size);
 	  at++;
 	  size=strlen(tmp);
-	  tmp[size++] = ' '; 
+	  tmp[size++] = ' ';
      }
      tmp[size-1] = '\0';
      post("sending %s",tmp);
@@ -274,6 +275,14 @@ void schale_free(t_schale* x)
     binbuf_free(x->x_binbuf);
 }
 
+void schale_kill(t_schale *x)
+{
+    int killed;
+    if (x->fdinpipe[0] == -1) return;
+    post("kill process %d", x->pid);
+    killed = kill(x->pid, SIGINT);
+}
+
 static void *schale_new(void)
 {
     t_schale *x = (t_schale *)pd_new(schale_class);
@@ -300,6 +309,7 @@ void schale_setup(void)
     schale_class = class_new(gensym("schale"), (t_newmethod)schale_new,
 			    (t_method)schale_free,sizeof(t_schale), 0,0);
     class_addbang(schale_class,schale_bang);
+    class_addmethod(schale_class, (t_method)schale_kill, gensym("kill"), 0);
     class_addanything(schale_class, schale_anything);
 }
 
