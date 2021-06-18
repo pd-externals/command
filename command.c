@@ -17,11 +17,11 @@
 void sys_rmpollfn(int fd);
 void sys_addpollfn(int fd, void* fn, void *ptr);
 
-/* ------------------------ schale ----------------------------- */
+/* ------------------------ command ----------------------------- */
 
 #define INBUFSIZE 65536
 
-static t_class *schale_class;
+static t_class *command_class;
 
 
 static void drop_priority(void)
@@ -35,7 +35,7 @@ static void drop_priority(void)
 }
 
 
-typedef struct _schale
+typedef struct _command
 {
      t_object x_obj;
      int      x_echo;
@@ -49,12 +49,12 @@ typedef struct _schale
      int x_del;
      t_outlet* x_done;
      t_clock* x_clock;
-} t_schale;
+} t_command;
 
-static int schale_pid;
+static int command_pid;
 
 
-void schale_cleanup(t_schale* x)
+void command_cleanup(t_command* x)
 {
      sys_rmpollfn(x->fdpipe[0]);
 
@@ -70,13 +70,13 @@ void schale_cleanup(t_schale* x)
      clock_unset(x->x_clock);
 }
 
-void schale_check(t_schale* x)
+void command_check(t_command* x)
 {
 	int ret;
 	int status;
 	ret = waitpid(x->pid,&status,WNOHANG);
 	if (ret == x->pid) {
-	     schale_cleanup(x);
+	     command_cleanup(x);
 	     if (WIFEXITED(status)) {
 		  outlet_float(x->x_done,WEXITSTATUS(status));
 	     }
@@ -89,15 +89,15 @@ void schale_check(t_schale* x)
 }
 
 
-void schale_bang(t_schale *x)
+void command_bang(t_command *x)
 {
      post("bang");
 }
 
 /* snippet from pd's code */
-static void schale_doit(void *z, t_binbuf *b)
+static void command_doit(void *z, t_binbuf *b)
 {
-    t_schale *x = (t_schale *)z;
+    t_command *x = (t_command *)z;
     int msg, natom = binbuf_getnatom(b);
     t_atom *at = binbuf_getvec(b);
 
@@ -132,7 +132,7 @@ static void schale_doit(void *z, t_binbuf *b)
 }
 
 
-void schale_read(t_schale *x, int fd)
+void command_read(t_command *x, int fd)
 {
      char buf[INBUFSIZE];
      t_binbuf* bbuf = binbuf_new();
@@ -149,7 +149,7 @@ void schale_read(t_schale *x, int fd)
        if (buf[i] == 'M') buf[i] = 'X';
      if (ret < 0)
        {
-	 error("schale: pipe read error");
+	 error("command: pipe read error");
 	 sys_rmpollfn(fd);
 	 x->fdpipe[0] = -1;
 	 close(fd);
@@ -171,13 +171,13 @@ void schale_read(t_schale *x, int fd)
 
 	 natom = binbuf_getnatom(bbuf);
 	 at = binbuf_getvec(bbuf);
-	 schale_doit(x,bbuf);
+	 command_doit(x,bbuf);
        }
      binbuf_free(bbuf);
 }
 
 
-static void schale_send(t_schale *x, t_symbol *s,int ac, t_atom *at)
+static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
 {
      int i;
      char tmp[MAXPDSTRING];
@@ -196,7 +196,7 @@ static void schale_send(t_schale *x, t_symbol *s,int ac, t_atom *at)
      write(x->fdinpipe[0],tmp,strlen(tmp));
 }
 
-static void schale_anything(t_schale *x, t_symbol *s, int ac, t_atom *at)
+static void command_anything(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
      int i;
      char* argv[255];
@@ -204,16 +204,16 @@ static void schale_anything(t_schale *x, t_symbol *s, int ac, t_atom *at)
 
      if (!strcmp(s->s_name,"send")) {
 	  post("send");
-	  schale_send(x,s,ac,at);
+	  command_send(x,s,ac,at);
 	  return;
      }
 
      argv[0] = s->s_name;
 
      if (x->fdpipe[0] != -1) {
-	  post("schale: old process still running");
+	  post("command: old process still running");
 	  kill(x->pid,SIGKILL);
-	  schale_cleanup(x);
+	  command_cleanup(x);
      }
 
 
@@ -228,7 +228,7 @@ static void schale_anything(t_schale *x, t_symbol *s, int ac, t_atom *at)
      }
 
 
-     sys_addpollfn(x->fdpipe[0],schale_read,x);
+     sys_addpollfn(x->fdpipe[0],command_read,x);
 
      if (!(x->pid = fork())) {
          /* reassign stdout */
@@ -270,12 +270,12 @@ static void schale_anything(t_schale *x, t_symbol *s, int ac, t_atom *at)
 
 
 
-void schale_free(t_schale* x)
+void command_free(t_command* x)
 {
     binbuf_free(x->x_binbuf);
 }
 
-void schale_kill(t_schale *x)
+void command_kill(t_command *x)
 {
     int killed;
     if (x->fdinpipe[0] == -1) return;
@@ -283,9 +283,9 @@ void schale_kill(t_schale *x)
     killed = kill(x->pid, SIGINT);
 }
 
-static void *schale_new(void)
+static void *command_new(void)
 {
-    t_schale *x = (t_schale *)pd_new(schale_class);
+    t_command *x = (t_command *)pd_new(command_class);
 
     x->x_echo = 0;
     x->fdpipe[0] = -1;
@@ -294,23 +294,23 @@ static void *schale_new(void)
     x->fdinpipe[1] = -1;
 
     x->sr_inhead = x->sr_intail = 0;
-    if (!(x->sr_inbuf = (char*) malloc(INBUFSIZE))) bug("t_schale");;
+    if (!(x->sr_inbuf = (char*) malloc(INBUFSIZE))) bug("t_command");;
 
     x->x_binbuf = binbuf_new();
 
     outlet_new(&x->x_obj, &s_list);
     x->x_done = outlet_new(&x->x_obj, &s_bang);
-    x->x_clock = clock_new(x, (t_method) schale_check);
+    x->x_clock = clock_new(x, (t_method) command_check);
     return (x);
 }
 
-void schale_setup(void)
+void command_setup(void)
 {
-    schale_class = class_new(gensym("schale"), (t_newmethod)schale_new,
-			    (t_method)schale_free,sizeof(t_schale), 0,0);
-    class_addbang(schale_class,schale_bang);
-    class_addmethod(schale_class, (t_method)schale_kill, gensym("kill"), 0);
-    class_addanything(schale_class, schale_anything);
+    command_class = class_new(gensym("command"), (t_newmethod)command_new,
+			    (t_method)command_free,sizeof(t_command), 0,0);
+    class_addbang(command_class,command_bang);
+    class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
+    class_addanything(command_class, command_anything);
 }
 
 
