@@ -198,39 +198,39 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
 
 static void command_anything(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
-     int i;
-     char* argv[255];
-     t_symbol* sym;
+    int i;
+    char* argv[255];
+    t_symbol* sym;
 
-     if (!strcmp(s->s_name,"send")) {
-	  post("send");
-	  command_send(x,s,ac,at);
-	  return;
-     }
+    if (!strcmp(s->s_name,"send")) {
+	post("send");
+	command_send(x,s,ac,at);
+	return;
+    }
 
-     argv[0] = s->s_name;
+    argv[0] = s->s_name;
 
-     if (x->fdpipe[0] != -1) {
-	  post("command: old process still running");
-	  kill(x->pid,SIGKILL);
-	  command_cleanup(x);
-     }
-
-
-     if (pipe(x->fdpipe) < 0) {
-	  error("unable to create pipe");
-	  return;
-     }
-
-     if (pipe(x->fdinpipe) < 0) {
-	  error("unable to create input pipe");
-	  return;
-     }
+    if (x->fdpipe[0] != -1) {
+	post("command: old process still running");
+	kill(x->pid,SIGKILL);
+	command_cleanup(x);
+    }
 
 
-     sys_addpollfn(x->fdpipe[0],command_read,x);
+    if (pipe(x->fdpipe) < 0) {
+	error("unable to create pipe");
+        return;
+    }
 
-     if (!(x->pid = fork())) {
+    if (pipe(x->fdinpipe) < 0) {
+        error("unable to create input pipe");
+        return;
+    }
+
+
+    sys_addpollfn(x->fdpipe[0],command_read,x);
+
+    if (!(x->pid = fork())) {
          /* reassign stdout */
          dup2(x->fdpipe[1],1);
          dup2(x->fdinpipe[1],0);
@@ -239,33 +239,20 @@ static void command_anything(t_command *x, t_symbol *s, int ac, t_atom *at)
          drop_priority();
          seteuid(getuid());          /* lose setuid priveliges */
 
-#ifdef __APPLE__
-	  for (i=1;i<=ac;i++) {
-	       argv[i] = getbytes(255);
-	       atom_string(at,argv[i],255);
-	       at++;
-	  }
-	  argv[i] = 0;
-	  execvp(s->s_name,argv);
-#else
-	// changed linux part: use execvp() instead system()
-	// see https://github.com/umlaeute/Gem/issues/224
+        for (i=1;i<=ac;i++) {
+	    argv[i] = getbytes(255);
+	    atom_string(at,argv[i],255);
+	    at++;
+	}
+	argv[i] = 0;
+	execvp(s->s_name,argv);
+	exit(0);
+    }
+    x->x_del = 4;
+    clock_delay(x->x_clock,x->x_del);
 
-	  for (i=1;i<=ac;i++) {
-	       argv[i] = getbytes(255);
-	       atom_string(at,argv[i],255);
-	       at++;
-	  }
-	  argv[i] = 0;
-	  execvp(s->s_name,argv);
-#endif /* __APPLE__ */
-	  exit(0);
-     }
-     x->x_del = 4;
-     clock_delay(x->x_clock,x->x_del);
-
-     if (x->x_echo)
-	  outlet_anything(x->x_obj.ob_outlet, s, ac, at); 
+    if (x->x_echo)
+	outlet_anything(x->x_obj.ob_outlet, s, ac, at); 
 }
 
 
