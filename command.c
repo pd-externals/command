@@ -88,12 +88,6 @@ void command_check(t_command* x)
     }
 }
 
-
-void command_bang(t_command *x)
-{
-    post("bang");
-}
-
 /* snippet from pd's code */
 static void command_doit(void *z, t_binbuf *b)
 {
@@ -292,7 +286,6 @@ void command_setup(void)
 {
     command_class = class_new(gensym("command"), (t_newmethod)command_new,
 			    (t_method)command_free,sizeof(t_command), 0,0);
-    class_addbang(command_class,command_bang);
     class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
     class_addmethod(command_class, (t_method)command_exec, gensym("exec"),
                     A_GIMME, 0);
