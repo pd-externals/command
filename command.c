@@ -37,18 +37,18 @@ static void drop_priority(void)
 
 typedef struct _command
 {
-     t_object x_obj;
-     int      x_echo;
-     char *sr_inbuf;
-     int sr_inhead;
-     int sr_intail;
-     void* x_binbuf;
-     int fdpipe[2];
-     int fdinpipe[2];
-     int pid;
-     int x_del;
-     t_outlet* x_done;
-     t_clock* x_clock;
+    t_object x_obj;
+    int      x_echo;
+    char *sr_inbuf;
+    int sr_inhead;
+    int sr_intail;
+    void* x_binbuf;
+    int fdpipe[2];
+    int fdinpipe[2];
+    int pid;
+    int x_del;
+    t_outlet* x_done;
+    t_clock* x_clock;
 } t_command;
 
 static int command_pid;
@@ -56,42 +56,42 @@ static int command_pid;
 
 void command_cleanup(t_command* x)
 {
-     sys_rmpollfn(x->fdpipe[0]);
+    sys_rmpollfn(x->fdpipe[0]);
 
-     if (x->fdpipe[0]>0) close(x->fdpipe[0]);
-     if (x->fdpipe[1]>0) close(x->fdpipe[1]);
-     if (x->fdinpipe[0]>0) close(x->fdinpipe[0]);
-     if (x->fdinpipe[1]>0) close(x->fdinpipe[1]);
+    if (x->fdpipe[0]>0) close(x->fdpipe[0]);
+    if (x->fdpipe[1]>0) close(x->fdpipe[1]);
+    if (x->fdinpipe[0]>0) close(x->fdinpipe[0]);
+    if (x->fdinpipe[1]>0) close(x->fdinpipe[1]);
 
-     x->fdpipe[0] = -1;
-     x->fdpipe[1] = -1;
-     x->fdinpipe[0] = -1;
-     x->fdinpipe[1] = -1;
-     clock_unset(x->x_clock);
+    x->fdpipe[0] = -1;
+    x->fdpipe[1] = -1;
+    x->fdinpipe[0] = -1;
+    x->fdinpipe[1] = -1;
+    clock_unset(x->x_clock);
 }
 
 void command_check(t_command* x)
 {
-	int ret;
-	int status;
-	ret = waitpid(x->pid,&status,WNOHANG);
-	if (ret == x->pid) {
-	     command_cleanup(x);
-	     if (WIFEXITED(status)) {
-		  outlet_float(x->x_done,WEXITSTATUS(status));
-	     }
-	     else outlet_float(x->x_done,0);
-	}
-	else {
-	     if (x->x_del < 100) x->x_del+=2; /* increment poll times */
-	     clock_delay(x->x_clock,x->x_del);
-	}
+    int ret;
+    int status;
+    ret = waitpid(x->pid,&status,WNOHANG);
+    if (ret == x->pid) {
+        command_cleanup(x);
+        if (WIFEXITED(status)) {
+            outlet_float(x->x_done,WEXITSTATUS(status));
+        }
+        else outlet_float(x->x_done,0);
+    }
+    else {
+        if (x->x_del < 100) x->x_del+=2; /* increment poll times */
+        clock_delay(x->x_clock,x->x_del);
+    }
 }
 
 
 void command_bang(t_command *x)
 {
-     post("bang");
+    post("bang");
 }
 
 /* snippet from pd's code */
@@ -103,97 +103,97 @@ static void command_doit(void *z, t_binbuf *b)
 
     for (msg = 0; msg < natom;)
     {
-    	int emsg;
-	for (emsg = msg; emsg < natom && at[emsg].a_type != A_COMMA
-	    && at[emsg].a_type != A_SEMI; emsg++)
-	    	;
-	if (emsg > msg)
-	{
-	    int i;
-	    for (i = msg; i < emsg; i++)
+        int emsg;
+        for (emsg = msg; emsg < natom && at[emsg].a_type != A_COMMA
+            && at[emsg].a_type != A_SEMI; emsg++);
+
+        if (emsg > msg)
+        {
+            int i;
+            for (i = msg; i < emsg; i++)
 	    	if (at[i].a_type == A_DOLLAR || at[i].a_type == A_DOLLSYM)
-	    {
-	    	pd_error(x, "shell: got dollar sign in message");
-		goto nodice;
-	    }
-	    if (at[msg].a_type == A_FLOAT)
-	    {
-	    	if (emsg > msg + 1)
-		    outlet_list(x->x_obj.ob_outlet,  0, emsg-msg, at + msg);
-		else outlet_float(x->x_obj.ob_outlet,  at[msg].a_w.w_float);
-	    }
+            {
+                pd_error(x, "shell: got dollar sign in message");
+                goto nodice;
+            }
+            if (at[msg].a_type == A_FLOAT)
+            {
+                if (emsg > msg + 1)
+                    outlet_list(x->x_obj.ob_outlet,  0, emsg-msg, at + msg);
+                else outlet_float(x->x_obj.ob_outlet,  at[msg].a_w.w_float);
+            }
 	    else if (at[msg].a_type == A_SYMBOL)
-	    	outlet_anything(x->x_obj.ob_outlet,  at[msg].a_w.w_symbol,
-		    emsg-msg-1, at + msg + 1);
-	}
+                outlet_anything(x->x_obj.ob_outlet,  at[msg].a_w.w_symbol,
+                    emsg-msg-1, at + msg + 1);
+        }
     nodice:
-    	msg = emsg + 1;
+        msg = emsg + 1;
     }
 }
 
 
 void command_read(t_command *x, int fd)
 {
-     char buf[INBUFSIZE];
-     t_binbuf* bbuf = binbuf_new();
-     int i;
-     int readto =
+    char buf[INBUFSIZE];
+    t_binbuf* bbuf = binbuf_new();
+    int i;
+    int readto =
 	  (x->sr_inhead >= x->sr_intail ? INBUFSIZE : x->sr_intail-1);
-     int ret;
+    int ret;
 
-     ret = read(fd, buf,INBUFSIZE-1);
-     buf[ret] = '\0';
+    ret = read(fd, buf,INBUFSIZE-1);
+    buf[ret] = '\0';
 
-     for (i=0;i<ret;i++)
-       if (buf[i] == '\n') buf[i] = ';';
-       if (buf[i] == 'M') buf[i] = 'X';
-     if (ret < 0)
-       {
-	 error("command: pipe read error");
-	 sys_rmpollfn(fd);
-	 x->fdpipe[0] = -1;
-	 close(fd);
-	 return;
-       }
-     else if (ret == 0)
-       {
-	 post("EOF on socket %d\n", fd);
-	 sys_rmpollfn(fd);
-	 x->fdpipe[0] = -1;
-	 close(fd);
-	 return;
-       }
-     else
-       {
-	 int natom;
-	 t_atom *at;
-	 binbuf_text(bbuf, buf, strlen(buf));
+    for (i=0;i<ret;i++)
+        if (buf[i] == '\n') buf[i] = ';';
+    if (buf[i] == 'M') buf[i] = 'X';
+    if (ret < 0)
+    {
+        error("command: pipe read error");
+        sys_rmpollfn(fd);
+        x->fdpipe[0] = -1;
+        close(fd);
+        return;
+    }
+    else if (ret == 0)
+    {
+        post("EOF on socket %d\n", fd);
+        sys_rmpollfn(fd);
+        x->fdpipe[0] = -1;
+        close(fd);
+	return;
+    }
+    else
+    {
+        int natom;
+	t_atom *at;
+	binbuf_text(bbuf, buf, strlen(buf));
 
-	 natom = binbuf_getnatom(bbuf);
-	 at = binbuf_getvec(bbuf);
-	 command_doit(x,bbuf);
-       }
-     binbuf_free(bbuf);
+	natom = binbuf_getnatom(bbuf);
+        at = binbuf_getvec(bbuf);
+        command_doit(x,bbuf);
+    }
+    binbuf_free(bbuf);
 }
 
 
 static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
 {
-     int i;
-     char tmp[MAXPDSTRING];
-     int size = 0;
+    int i;
+    char tmp[MAXPDSTRING];
+    int size = 0;
 
-     if (x->fdinpipe[0] == -1) return; /* nothing to send to */
+    if (x->fdinpipe[0] == -1) return; /* nothing to send to */
 
-     for (i=0;i<ac;i++) {
-	  atom_string(at,tmp+size,MAXPDSTRING - size);
-	  at++;
-	  size=strlen(tmp);
-	  tmp[size++] = ' ';
-     }
-     tmp[size-1] = '\0';
-     post("sending %s",tmp);
-     write(x->fdinpipe[0],tmp,strlen(tmp));
+    for (i=0;i<ac;i++) {
+        atom_string(at,tmp+size,MAXPDSTRING - size);
+        at++;
+        size=strlen(tmp);
+        tmp[size++] = ' ';
+    }
+    tmp[size-1] = '\0';
+    post("sending %s",tmp);
+    write(x->fdinpipe[0],tmp,strlen(tmp));
 }
 
 static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
