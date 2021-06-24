@@ -196,7 +196,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
      write(x->fdinpipe[0],tmp,strlen(tmp));
 }
 
-static void command_anything(t_command *x, t_symbol *s, int ac, t_atom *at)
+static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
     int i;
     char* argv[255];
@@ -207,8 +207,6 @@ static void command_anything(t_command *x, t_symbol *s, int ac, t_atom *at)
 	command_send(x,s,ac,at);
 	return;
     }
-
-    argv[0] = s->s_name;
 
     if (x->fdpipe[0] != -1) {
 	post("command: old process still running");
@@ -227,35 +225,34 @@ static void command_anything(t_command *x, t_symbol *s, int ac, t_atom *at)
         return;
     }
 
-
     sys_addpollfn(x->fdpipe[0],command_read,x);
 
     if (!(x->pid = fork())) {
-         /* reassign stdout */
-         dup2(x->fdpipe[1],1);
-         dup2(x->fdinpipe[1],0);
+        /* reassign stdout */
+        dup2(x->fdpipe[1],1);
+        dup2(x->fdinpipe[1],0);
 
-         /* drop privileges */
-         drop_priority();
-         seteuid(getuid());          /* lose setuid priveliges */
-
-        for (i=1;i<=ac;i++) {
+        /* drop privileges */
+        drop_priority();
+        /* lose setuid priveliges */
+        seteuid(getuid());
+        for (i=0;i<ac;i++) {
 	    argv[i] = getbytes(255);
 	    atom_string(at,argv[i],255);
 	    at++;
 	}
-	argv[i] = 0;
-	execvp(s->s_name,argv);
+	argv[i] = '\0';
+	if (execvp(argv[0], argv) == -1) {
+            error("execution failed");
+        };
 	exit(0);
     }
     x->x_del = 4;
     clock_delay(x->x_clock,x->x_del);
 
     if (x->x_echo)
-	outlet_anything(x->x_obj.ob_outlet, s, ac, at); 
+	outlet_anything(x->x_obj.ob_outlet, s, ac, at);
 }
-
-
 
 void command_free(t_command* x)
 {
@@ -297,7 +294,8 @@ void command_setup(void)
 			    (t_method)command_free,sizeof(t_command), 0,0);
     class_addbang(command_class,command_bang);
     class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
-    class_addanything(command_class, command_anything);
+    class_addmethod(command_class, (t_method)command_exec, gensym("exec"),
+                    A_GIMME, 0);
 }
 
 
