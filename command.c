@@ -159,12 +159,7 @@ void command_read(t_command *x, int fd)
     }
     else
     {
-        int natom;
-	t_atom *at;
 	binbuf_text(bbuf, buf, strlen(buf));
-
-	natom = binbuf_getnatom(bbuf);
-        at = binbuf_getvec(bbuf);
         command_doit(x,bbuf);
     }
     binbuf_free(bbuf);
