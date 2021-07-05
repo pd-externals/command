@@ -191,12 +191,6 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     char* argv[255];
     t_symbol* sym;
 
-    if (!strcmp(s->s_name,"send")) {
-	post("send");
-	command_send(x,s,ac,at);
-	return;
-    }
-
     if (x->fdpipe[0] != -1) {
 	post("command: old process still running");
 	kill(x->pid,SIGKILL);
