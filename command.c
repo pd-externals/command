@@ -37,12 +37,12 @@ static void drop_priority(void)
 typedef struct _command
 {
     t_object x_obj;
-    char *sr_inbuf;
-    int sr_inhead;
-    int sr_intail;
+//    char *sr_inbuf;
+//    int sr_inhead;
+//    int sr_intail;
     void* x_binbuf;
-    int fdpipe[2];
-    int fdinpipe[2];
+    int fd_stdout_pipe[2];
+    int fd_stdin_pipe[2];
     int pid;
     int x_del;
     t_outlet* x_done;
@@ -52,17 +52,17 @@ typedef struct _command
 
 void command_cleanup(t_command* x)
 {
-    sys_rmpollfn(x->fdpipe[0]);
+    sys_rmpollfn(x->fd_stdout_pipe[0]);
 
-    if (x->fdpipe[0]>0) close(x->fdpipe[0]);
-    if (x->fdpipe[1]>0) close(x->fdpipe[1]);
-    if (x->fdinpipe[0]>0) close(x->fdinpipe[0]);
-    if (x->fdinpipe[1]>0) close(x->fdinpipe[1]);
+    if (x->fd_stdout_pipe[0]>0) close(x->fd_stdout_pipe[0]);
+    if (x->fd_stdout_pipe[1]>0) close(x->fd_stdout_pipe[1]);
+    if (x->fd_stdin_pipe[0]>0) close(x->fd_stdin_pipe[0]);
+    if (x->fd_stdin_pipe[1]>0) close(x->fd_stdin_pipe[1]);
 
-    x->fdpipe[0] = -1;
-    x->fdpipe[1] = -1;
-    x->fdinpipe[0] = -1;
-    x->fdinpipe[1] = -1;
+    x->fd_stdout_pipe[0] = -1;
+    x->fd_stdout_pipe[1] = -1;
+    x->fd_stdin_pipe[0] = -1;
+    x->fd_stdin_pipe[1] = -1;
     clock_unset(x->x_clock);
 }
 
@@ -139,7 +139,7 @@ void command_read(t_command *x, int fd)
     {
         error("command: pipe read error");
         sys_rmpollfn(fd);
-        x->fdpipe[0] = -1;
+        x->fd_stdout_pipe[0] = -1;
         close(fd);
         return;
     }
@@ -147,7 +147,7 @@ void command_read(t_command *x, int fd)
     {
         post("EOF on socket %d\n", fd);
         sys_rmpollfn(fd);
-        x->fdpipe[0] = -1;
+        x->fd_stdout_pipe[0] = -1;
         close(fd);
 	return;
     }
@@ -166,7 +166,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     int size = 0;
     s = NULL;    //suppress warning
 
-    if (x->fdinpipe[0] == -1) return; /* nothing to send to */
+    if (x->fd_stdin_pipe[0] == -1) return; /* nothing to send to */
 
     for (i=0;i<ac;i++) {
         atom_string(at,tmp+size,MAXPDSTRING - size);
@@ -176,7 +176,10 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     }
     tmp[size-1] = '\0';
     post("sending %s",tmp);
-    write(x->fdinpipe[0],tmp,strlen(tmp));
+    if (write(x->fd_stdin_pipe[0],tmp,strlen(tmp)) == -1)
+    {
+        error("writing to stdin of command failed");
+    }
 }
 
 static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
@@ -185,29 +188,29 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     char* argv[255];
     s = NULL; // suppress warning
 
-    if (x->fdpipe[0] != -1) {
+    if (x->fd_stdout_pipe[0] != -1) {
         post("command: old process still running");
         return;
     }
 
 
-    if (pipe(x->fdpipe) < 0) {
+    if (pipe(x->fd_stdout_pipe) < 0) {
 	error("unable to create pipe");
         return;
     }
 
-    if (pipe(x->fdinpipe) < 0) {
+    if (pipe(x->fd_stdin_pipe) < 0) {
         error("unable to create input pipe");
         return;
     }
 
-    sys_addpollfn(x->fdpipe[0],command_read,x);
+    sys_addpollfn(x->fd_stdout_pipe[0],command_read,x);
     x->pid = fork();
 
     if (x->pid == 0) {
         /* reassign stdout */
-        dup2(x->fdpipe[1],1);
-        dup2(x->fdinpipe[1],0);
+        dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
+        dup2(x->fd_stdin_pipe[1],  STDIN_FILENO);
 
         /* drop privileges */
         drop_priority();
@@ -243,7 +246,7 @@ void command_free(t_command* x)
 
 void command_kill(t_command *x)
 {
-    if (x->fdinpipe[0] == -1) return;
+    if (x->fd_stdin_pipe[0] == -1) return;
     post("kill process %d", x->pid);
     if (kill(x->pid, SIGINT) < -1)
     {
@@ -255,13 +258,13 @@ static void *command_new(void)
 {
     t_command *x = (t_command *)pd_new(command_class);
 
-    x->fdpipe[0] = -1;
-    x->fdpipe[1] = -1;
-    x->fdinpipe[0] = -1;
-    x->fdinpipe[1] = -1;
+    x->fd_stdout_pipe[0] = -1; // read end
+    x->fd_stdout_pipe[1] = -1; // write end
+    x->fd_stdin_pipe[0] = -1;  // read end
+    x->fd_stdin_pipe[1] = -1;  // write end
 
-    x->sr_inhead = x->sr_intail = 0;
-    if (!(x->sr_inbuf = (char*) malloc(INBUFSIZE))) bug("t_command");;
+    //x->sr_inhead = x->sr_intail = 0;
+    //if (!(x->sr_inbuf = (char*) malloc(INBUFSIZE))) bug("t_command");;
 
     x->x_binbuf = binbuf_new();
 
@@ -275,10 +278,12 @@ static void *command_new(void)
 void command_setup(void)
 {
     command_class = class_new(gensym("command"), (t_newmethod)command_new,
-			    (t_method)command_free,sizeof(t_command), 0,0);
+                        (t_method)command_free,sizeof(t_command), 0,0);
     class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
     class_addmethod(command_class, (t_method)command_exec, gensym("exec"),
-                    A_GIMME, 0);
+        A_GIMME, 0);
+    class_addmethod(command_class, (t_method)command_send, gensym("send"),
+        A_GIMME, 0);
 }
 
 
