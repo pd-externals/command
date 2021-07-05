@@ -28,7 +28,6 @@ static void drop_priority(void)
 {
 #if (_POSIX_PRIORITY_SCHEDULING - 0) >=  200112L
     struct sched_param par;
-    int p1 ,p2, p3;
     par.sched_priority = 0;
     sched_setscheduler(0,SCHED_OTHER,&par);
 #endif
@@ -50,9 +49,6 @@ typedef struct _command
     t_clock* x_clock;
     t_symbol *path;
 } t_command;
-
-static int command_pid;
-
 
 void command_cleanup(t_command* x)
 {
@@ -131,8 +127,6 @@ void command_read(t_command *x, int fd)
     char buf[INBUFSIZE];
     t_binbuf* bbuf = binbuf_new();
     int i;
-    int readto =
-	  (x->sr_inhead >= x->sr_intail ? INBUFSIZE : x->sr_intail-1);
     int ret;
 
     ret = read(fd, buf,INBUFSIZE-1);
@@ -165,12 +159,12 @@ void command_read(t_command *x, int fd)
     binbuf_free(bbuf);
 }
 
-
 static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
 {
     int i;
     char tmp[MAXPDSTRING];
     int size = 0;
+    s = NULL;    //suppress warning
 
     if (x->fdinpipe[0] == -1) return; /* nothing to send to */
 
@@ -189,7 +183,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
     int i;
     char* argv[255];
-    t_symbol* sym;
+    s = NULL; // suppress warning
 
     if (x->fdpipe[0] != -1) {
         post("command: old process still running");
@@ -208,8 +202,9 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     }
 
     sys_addpollfn(x->fdpipe[0],command_read,x);
+    x->pid = fork();
 
-    if (!(x->pid = fork())) {
+    if (x->pid == 0) {
         /* reassign stdout */
         dup2(x->fdpipe[1],1);
         dup2(x->fdinpipe[1],0);
@@ -217,7 +212,11 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         /* drop privileges */
         drop_priority();
         /* lose setuid priveliges */
-        seteuid(getuid());
+        if (seteuid(getuid()) == -1)
+        {
+            error("seteuid failed");
+            return;
+        }
         for (i=0;i<ac;i++) {
 	    argv[i] = getbytes(255);
 	    atom_string(at,argv[i],255);
@@ -244,10 +243,12 @@ void command_free(t_command* x)
 
 void command_kill(t_command *x)
 {
-    int killed;
     if (x->fdinpipe[0] == -1) return;
     post("kill process %d", x->pid);
-    killed = kill(x->pid, SIGINT);
+    if (kill(x->pid, SIGINT) < -1)
+    {
+        error("killing command failed");
+    }
 }
 
 static void *command_new(void)
