@@ -38,7 +38,6 @@ static void drop_priority(void)
 typedef struct _command
 {
     t_object x_obj;
-    int      x_echo;
     char *sr_inbuf;
     int sr_inhead;
     int sr_intail;
@@ -248,9 +247,6 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     }
     x->x_del = 4;
     clock_delay(x->x_clock,x->x_del);
-
-    if (x->x_echo)
-	outlet_anything(x->x_obj.ob_outlet, s, ac, at);
 }
 
 void command_free(t_command* x)
@@ -270,7 +266,6 @@ static void *command_new(void)
 {
     t_command *x = (t_command *)pd_new(command_class);
 
-    x->x_echo = 0;
     x->fdpipe[0] = -1;
     x->fdpipe[1] = -1;
     x->fdinpipe[0] = -1;
