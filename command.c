@@ -37,9 +37,6 @@ static void drop_priority(void)
 typedef struct _command
 {
     t_object x_obj;
-//    char *sr_inbuf;
-//    int sr_inhead;
-//    int sr_intail;
     void* x_binbuf;
     int fd_stdout_pipe[2];
     int fd_stdin_pipe[2];
@@ -176,7 +173,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     }
     tmp[size-1] = '\0';
     post("sending %s",tmp);
-    if (write(x->fd_stdin_pipe[0],tmp,strlen(tmp)) == -1)
+    if (write(x->fd_stdin_pipe[1],tmp,strlen(tmp)) == -1)
     {
         error("writing to stdin of command failed");
     }
@@ -210,7 +207,10 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     if (x->pid == 0) {
         /* reassign stdout */
         dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
-        dup2(x->fd_stdin_pipe[1],  STDIN_FILENO);
+        dup2(x->fd_stdin_pipe[0],  STDIN_FILENO);
+
+        close(x->fd_stdout_pipe[1]);
+        close(x->fd_stdin_pipe[0]);
 
         /* drop privileges */
         drop_priority();
@@ -262,9 +262,6 @@ static void *command_new(void)
     x->fd_stdout_pipe[1] = -1; // write end
     x->fd_stdin_pipe[0] = -1;  // read end
     x->fd_stdin_pipe[1] = -1;  // write end
-
-    //x->sr_inhead = x->sr_intail = 0;
-    //if (!(x->sr_inbuf = (char*) malloc(INBUFSIZE))) bug("t_command");;
 
     x->x_binbuf = binbuf_new();
 
