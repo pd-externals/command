@@ -107,7 +107,7 @@ static void command_doit(void *z, t_binbuf *b)
             for (i = msg; i < emsg; i++)
 	    	if (at[i].a_type == A_DOLLAR || at[i].a_type == A_DOLLSYM)
             {
-                pd_error(x, "shell: got dollar sign in message");
+                pd_error(x, "command: got dollar sign in message");
                 goto nodice;
             }
             if (at[msg].a_type == A_FLOAT)
