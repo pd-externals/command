@@ -49,6 +49,7 @@ typedef struct _command
     int x_del;
     t_outlet* x_done;
     t_clock* x_clock;
+    t_symbol *path;
 } t_command;
 
 static int command_pid;
@@ -236,6 +237,10 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 	    at++;
 	}
 	argv[i] = '\0';
+        if (chdir(x->path->s_name) == -1) {
+            error("changing directory failed");
+        }
+
 	if (execvp(argv[0], argv) == -1) {
             error("execution failed");
         };
@@ -279,6 +284,7 @@ static void *command_new(void)
     outlet_new(&x->x_obj, &s_list);
     x->x_done = outlet_new(&x->x_obj, &s_bang);
     x->x_clock = clock_new(x, (t_method) command_check);
+    x->path = canvas_getdir(canvas_getcurrent());
     return (x);
 }
 
