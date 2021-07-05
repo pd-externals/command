@@ -192,9 +192,8 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     t_symbol* sym;
 
     if (x->fdpipe[0] != -1) {
-	post("command: old process still running");
-	kill(x->pid,SIGKILL);
-	command_cleanup(x);
+        post("command: old process still running");
+        return;
     }
 
 
