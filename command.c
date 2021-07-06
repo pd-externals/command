@@ -100,7 +100,7 @@ static void command_doit(void *z, t_binbuf *b)
             for (i = msg; i < emsg; i++)
 	    	if (at[i].a_type == A_DOLLAR || at[i].a_type == A_DOLLSYM)
             {
-                pd_error(x, "command: got dollar sign in message");
+                pd_error(x, "got dollar sign in message");
                 goto nodice;
             }
             if (at[msg].a_type == A_FLOAT)
@@ -134,7 +134,7 @@ void command_read(t_command *x, int fd)
     if (buf[i] == 'M') buf[i] = 'X';
     if (ret < 0)
     {
-        error("command: pipe read error");
+        error("pipe read error");
         sys_rmpollfn(fd);
         x->fd_stdout_pipe[0] = -1;
         close(fd);
@@ -172,7 +172,6 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
         tmp[size++] = ' ';
     }
     tmp[size-1] = '\0';
-    post("sending %s",tmp);
     if (write(x->fd_stdin_pipe[1],tmp,strlen(tmp)) == -1)
     {
         error("writing to stdin of command failed");
@@ -186,7 +185,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     s = NULL; // suppress warning
 
     if (x->fd_stdout_pipe[0] != -1) {
-        post("command: old process still running");
+        post("old process still running");
         return;
     }
 
@@ -254,7 +253,6 @@ void command_free(t_command* x)
 void command_kill(t_command *x)
 {
     if (x->fd_stdin_pipe[0] == -1) return;
-    post("kill process %d", x->pid);
     if (kill(x->pid, SIGINT) < -1)
     {
         error("killing command failed");
