@@ -208,7 +208,6 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         /* reassign stdout */
         dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
         dup2(x->fd_stdin_pipe[0],  STDIN_FILENO);
-
         close(x->fd_stdout_pipe[1]);
         close(x->fd_stdin_pipe[0]);
 
@@ -241,6 +240,14 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 
 void command_free(t_command* x)
 {
+    if (x->fd_stdout_pipe[0] != -1)
+    {
+        if (kill(x->pid, SIGINT) < -1)
+        {
+            error("killing command failed");
+        }
+        command_cleanup(x);
+    }
     binbuf_free(x->x_binbuf);
 }
 
