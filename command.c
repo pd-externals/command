@@ -134,7 +134,7 @@ void command_read(t_command *x, int fd)
     if (buf[i] == 'M') buf[i] = 'X';
     if (ret < 0)
     {
-        error("pipe read error");
+        pd_error(x, "pipe read error");
         sys_rmpollfn(fd);
         x->fd_stdout_pipe[0] = -1;
         close(fd);
@@ -174,7 +174,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     tmp[size-1] = '\0';
     if (write(x->fd_stdin_pipe[1],tmp,strlen(tmp)) == -1)
     {
-        error("writing to stdin of command failed");
+        pd_error(x, "writing to stdin of command failed");
     }
 }
 
@@ -191,12 +191,12 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 
 
     if (pipe(x->fd_stdout_pipe) < 0) {
-	error("unable to create pipe");
+	pd_error(x, "unable to create pipe");
         return;
     }
 
     if (pipe(x->fd_stdin_pipe) < 0) {
-        error("unable to create input pipe");
+        pd_error(x, "unable to create input pipe");
         return;
     }
 
@@ -215,7 +215,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         /* lose setuid priveliges */
         if (seteuid(getuid()) == -1)
         {
-            error("seteuid failed");
+            pd_error(x, "seteuid failed");
             return;
         }
         for (i=0;i<ac;i++) {
@@ -225,11 +225,11 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 	}
 	argv[i] = '\0';
         if (chdir(x->path->s_name) == -1) {
-            error("changing directory failed");
+            pd_error(x, "changing directory failed");
         }
 
 	if (execvp(argv[0], argv) == -1) {
-            error("execution failed");
+            pd_error(x, "execution failed");
         };
 	exit(0);
     }
@@ -243,7 +243,7 @@ void command_free(t_command* x)
     {
         if (kill(x->pid, SIGINT) < -1)
         {
-            error("killing command failed");
+            pd_error(x, "killing command failed");
         }
         command_cleanup(x);
     }
@@ -255,7 +255,7 @@ void command_kill(t_command *x)
     if (x->fd_stdin_pipe[0] == -1) return;
     if (kill(x->pid, SIGINT) < -1)
     {
-        error("killing command failed");
+        pd_error(x, "killing command failed");
     }
 }
 
