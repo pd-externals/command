@@ -40,9 +40,12 @@ typedef struct _command
     void* x_binbuf;
     int fd_stdout_pipe[2];
     int fd_stdin_pipe[2];
+    int fd_stderr_pipe[2];
     int pid;
     int x_del;
     t_outlet* x_done;
+    t_outlet* x_stdout;
+    t_outlet* x_stderr;
     t_clock* x_clock;
     t_symbol *path;
 } t_command;
@@ -55,11 +58,15 @@ void command_cleanup(t_command* x)
     if (x->fd_stdout_pipe[1]>0) close(x->fd_stdout_pipe[1]);
     if (x->fd_stdin_pipe[0]>0) close(x->fd_stdin_pipe[0]);
     if (x->fd_stdin_pipe[1]>0) close(x->fd_stdin_pipe[1]);
+    if (x->fd_stderr_pipe[0]>0) close(x->fd_stderr_pipe[0]);
+    if (x->fd_stderr_pipe[1]>0) close(x->fd_stderr_pipe[1]);
 
     x->fd_stdout_pipe[0] = -1;
     x->fd_stdout_pipe[1] = -1;
     x->fd_stdin_pipe[0] = -1;
     x->fd_stdin_pipe[1] = -1;
+    x->fd_stderr_pipe[0] = -1;
+    x->fd_stderr_pipe[1] = -1;
     clock_unset(x->x_clock);
 }
 
@@ -201,14 +208,17 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     }
 
     sys_addpollfn(x->fd_stdout_pipe[0],command_read,x);
+    //sys_addpollfn(x->fd_stderr_pipe[0],command_read,x);
     x->pid = fork();
 
     if (x->pid == 0) {
         /* reassign stdout */
         dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
         dup2(x->fd_stdin_pipe[0],  STDIN_FILENO);
+        dup2(x->fd_stderr_pipe[1], STDERR_FILENO);
         close(x->fd_stdout_pipe[1]);
         close(x->fd_stdin_pipe[0]);
+        close(x->fd_stderr_pipe[1]);
 
         /* drop privileges */
         drop_priority();
@@ -270,7 +280,8 @@ static void *command_new(void)
 
     x->x_binbuf = binbuf_new();
 
-    outlet_new(&x->x_obj, &s_list);
+    x->x_stdout = outlet_new(&x->x_obj, &s_list);
+    x->x_stderr = outlet_new(&x->x_obj, &s_list);
     x->x_done = outlet_new(&x->x_obj, &s_bang);
     x->x_clock = clock_new(x, (t_method) command_check);
     x->path = canvas_getdir(canvas_getcurrent());
