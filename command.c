@@ -53,6 +53,7 @@ typedef struct _command
 void command_cleanup(t_command* x)
 {
     sys_rmpollfn(x->fd_stdout_pipe[0]);
+    sys_rmpollfn(x->fd_stderr_pipe[0]);
 
     if (x->fd_stdout_pipe[0]>0) close(x->fd_stdout_pipe[0]);
     if (x->fd_stdout_pipe[1]>0) close(x->fd_stdout_pipe[1]);
@@ -89,7 +90,7 @@ void command_check(t_command* x)
 }
 
 /* snippet from pd's code */
-static void command_doit(void *z, t_binbuf *b)
+static void command_doit(void *z, t_binbuf *b, t_outlet *outlet)
 {
     t_command *x = (t_command *)z;
     int msg, natom = binbuf_getnatom(b);
@@ -117,7 +118,7 @@ static void command_doit(void *z, t_binbuf *b)
                 else outlet_float(x->x_obj.ob_outlet,  at[msg].a_w.w_float);
             }
 	    else if (at[msg].a_type == A_SYMBOL)
-                outlet_anything(x->x_obj.ob_outlet,  at[msg].a_w.w_symbol,
+                outlet_anything(outlet,  at[msg].a_w.w_symbol,
                     emsg-msg-1, at + msg + 1);
         }
     nodice:
@@ -158,7 +159,14 @@ void command_read(t_command *x, int fd)
     else
     {
 	binbuf_text(bbuf, buf, strlen(buf));
-        command_doit(x,bbuf);
+        if (fd == x->fd_stdout_pipe[0])
+        {
+            command_doit(x,bbuf,x->x_stdout);
+        }
+        else if (fd == x->fd_stderr_pipe[0])
+        {
+            command_doit(x,bbuf,x->x_stderr);
+        }
     }
     binbuf_free(bbuf);
 }
@@ -196,28 +204,32 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         return;
     }
 
-
-    if (pipe(x->fd_stdout_pipe) < 0) {
-	pd_error(x, "unable to create pipe");
+    if (pipe(x->fd_stdin_pipe) == -1) {
+        pd_error(x, "unable to create stdin pipe");
         return;
     }
 
-    if (pipe(x->fd_stdin_pipe) < 0) {
-        pd_error(x, "unable to create input pipe");
+    if (pipe(x->fd_stdout_pipe) == -1) {
+	pd_error(x, "unable to create stdout pipe");
+        return;
+    }
+
+    if (pipe(x->fd_stderr_pipe) == -1) {
+	pd_error(x, "unable to create stderr pipe");
         return;
     }
 
     sys_addpollfn(x->fd_stdout_pipe[0],command_read,x);
-    //sys_addpollfn(x->fd_stderr_pipe[0],command_read,x);
+    sys_addpollfn(x->fd_stderr_pipe[0],command_read,x);
     x->pid = fork();
 
     if (x->pid == 0) {
         /* reassign stdout */
-        dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
         dup2(x->fd_stdin_pipe[0],  STDIN_FILENO);
+        dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
         dup2(x->fd_stderr_pipe[1], STDERR_FILENO);
-        close(x->fd_stdout_pipe[1]);
         close(x->fd_stdin_pipe[0]);
+        close(x->fd_stdout_pipe[1]);
         close(x->fd_stderr_pipe[1]);
 
         /* drop privileges */
@@ -280,9 +292,9 @@ static void *command_new(void)
 
     x->x_binbuf = binbuf_new();
 
-    x->x_stdout = outlet_new(&x->x_obj, &s_list);
-    x->x_stderr = outlet_new(&x->x_obj, &s_list);
-    x->x_done = outlet_new(&x->x_obj, &s_bang);
+    x->x_stdout = outlet_new(&x->x_obj, 0);
+    x->x_stderr = outlet_new(&x->x_obj, 0);
+    x->x_done = outlet_new(&x->x_obj, &s_float);
     x->x_clock = clock_new(x, (t_method) command_check);
     x->path = canvas_getdir(canvas_getcurrent());
     return (x);
