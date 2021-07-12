@@ -34,4 +34,4 @@ shell scripts that can be executed with [command].
 
 ## License
 
-tcltk license. Refer to [LICENSE.txt](LICENSE.txt)
+Tcl/Tk License. Refer to [LICENSE.txt](LICENSE.txt)
