@@ -1,7 +1,8 @@
 # command
 
 
-is a fork of the [shell] external from Günter Geiger's ggee library.
+is a fork of the [shell] external from Günter Geiger's [ggee](https://github.com/pd-externals/ggee)
+library.
 
 It provides a way to execute commands from Pd. Its goal is to
 give more fine-grained control over the process it manages. Unlike
