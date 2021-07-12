@@ -1,5 +1,5 @@
-command
--------
+# command
+
 
 is a fork of the [shell] external from Günter Geiger's ggee library.
 
@@ -11,7 +11,7 @@ cannot be used with [command] directly. However, they can be used in
 shell scripts that can be executed with [command].
 
 
-# Features
+## Features
 
   * `kill` method for sending SIGINT to currently running command.
   * `send` method for sending data to STDIN of currently running command.
@@ -23,14 +23,14 @@ shell scripts that can be executed with [command].
     commands with relative path. This makes projects using custom scripts
     or binaries more portable.
 
-# Authors
+## Authors
 
-2002 - 2006 Guenter Geiger <geiger@xdv.org>
-2005 - 2010 Hans-Christoph Steiner <hans@eds.org>
-2008 - 2017 IOhannes m zmölnig <zmoelnig@iem.at>
-2019        jyg <jyg@gumo.fr>
-2021        Roman Haefeli <reduzent@gmail.com>
+2002 - 2006 Guenter Geiger <geiger@xdv.org>  
+2005 - 2010 Hans-Christoph Steiner <hans@eds.org>  
+2008 - 2017 IOhannes m zmölnig <zmoelnig@iem.at>  
+2019        jyg <jyg@gumo.fr>  
+2021        Roman Haefeli <reduzent@gmail.com>  
 
-# License
+## License
 
-tcltk license. Refer to [LICENSE.txt](LICENSE.txt) 
+tcltk license. Refer to [LICENSE.txt](LICENSE.txt)
