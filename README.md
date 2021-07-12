@@ -8,7 +8,7 @@ It provides a way to execute commands from Pd. Its goal is to
 give more fine-grained control over the process it manages. Unlike
 the original [shell] external, [command] executes commands directly
 and does not wrap them into a shell. This means shell features
-cannot be used with [command] directly. However, they can be used in
+cannot be used with [command]. However, they can be used in
 shell scripts that can be executed with [command].
 
 
