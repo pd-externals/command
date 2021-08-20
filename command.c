@@ -292,9 +292,9 @@ static void *command_new(void)
 
     x->x_binbuf = binbuf_new();
 
+    x->x_done = outlet_new(&x->x_obj, &s_float);
     x->x_stdout = outlet_new(&x->x_obj, 0);
     x->x_stderr = outlet_new(&x->x_obj, 0);
-    x->x_done = outlet_new(&x->x_obj, &s_float);
     x->x_clock = clock_new(x, (t_method) command_check);
     x->path = canvas_getdir(canvas_getcurrent());
     return (x);
