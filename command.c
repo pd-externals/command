@@ -186,7 +186,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
         size=strlen(tmp);
         tmp[size++] = ' ';
     }
-    tmp[size-1] = '\0';
+    tmp[size-1] = 0;
     if (write(x->fd_stdin_pipe[1],tmp,strlen(tmp)) == -1)
     {
         pd_error(x, "writing to stdin of command failed");
@@ -245,7 +245,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 	    atom_string(at,argv[i],255);
 	    at++;
 	}
-	argv[i] = '\0';
+	argv[i] = 0;
         if (chdir(x->path->s_name) == -1) {
             pd_error(x, "changing directory failed");
         }
