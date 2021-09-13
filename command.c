@@ -253,6 +253,9 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 	if (execvp(argv[0], argv) == -1) {
             pd_error(x, "execution failed");
         };
+        for (i=0;i<ac;i++) {
+            freebytes(argv[i], MAXPDSTRING);
+        }
 	exit(0);
     }
     x->x_del = 4;
