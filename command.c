@@ -176,7 +176,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     int i;
     char tmp[MAXPDSTRING];
     int size = 0;
-    s = NULL;    //suppress warning
+    (void)s;    //suppress warning
 
     if (x->fd_stdin_pipe[0] == -1) return; /* nothing to send to */
 
@@ -197,7 +197,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
     int i;
     char* argv[255];
-    s = NULL; // suppress warning
+    (void)s; // suppress warning
 
     if (x->fd_stdout_pipe[0] != -1) {
         post("old process still running");
