@@ -196,7 +196,6 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
 static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
     int i;
-    char* argv[255];
     (void)s; // suppress warning
 
     if (x->fd_stdout_pipe[0] != -1) {
@@ -224,6 +223,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     x->pid = fork();
 
     if (x->pid == 0) {
+        char**argv = getbytes((ac + 1) * sizeof(char*));
         /* reassign stdout */
         dup2(x->fd_stdin_pipe[0],  STDIN_FILENO);
         dup2(x->fd_stdout_pipe[1], STDOUT_FILENO);
@@ -256,6 +256,8 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         for (i=0;i<ac;i++) {
             freebytes(argv[i], MAXPDSTRING);
         }
+        freebytes(argv, (ac+1) * sizeof(char*));
+
 	exit(0);
     }
     x->x_del = 4;
