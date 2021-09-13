@@ -33,6 +33,17 @@ static void drop_priority(void)
 #endif
 }
 
+static const char*command_atom2string(const t_atom*ap, char*buffer, unsigned int buffersize) {
+  switch(ap->a_type) {
+  default:
+    atom_string(ap, buffer, buffersize);
+    return buffer;
+  case A_SYMBOL:
+    return strncat(buffer, atom_getsymbol(ap)->s_name, buffersize);
+  }
+  return 0;
+}
+
 
 typedef struct _command
 {
@@ -181,7 +192,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     if (x->fd_stdin_pipe[0] == -1) return; /* nothing to send to */
 
     for (i=0;i<ac;i++) {
-        atom_string(at,tmp+size,MAXPDSTRING - size);
+        command_atom2string(at,tmp+size,MAXPDSTRING - size);
         at++;
         size=strlen(tmp);
         tmp[size++] = ' ';
@@ -242,7 +253,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         }
         for (i=0;i<ac;i++) {
 	    argv[i] = getbytes(MAXPDSTRING);
-	    atom_string(at, argv[i], MAXPDSTRING);
+	    command_atom2string(at, argv[i], MAXPDSTRING);
 	    at++;
 	}
 	argv[i] = 0;
