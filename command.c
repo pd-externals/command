@@ -241,8 +241,8 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
             return;
         }
         for (i=0;i<ac;i++) {
-	    argv[i] = getbytes(255);
-	    atom_string(at,argv[i],255);
+	    argv[i] = getbytes(MAXPDSTRING);
+	    atom_string(at, argv[i], MAXPDSTRING);
 	    at++;
 	}
 	argv[i] = 0;
