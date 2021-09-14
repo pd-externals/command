@@ -3,7 +3,7 @@
 is a fork of the [shell] external from Günter Geiger's [ggee](https://github.com/pd-externals/ggee)
 library.
 
-# Current state
+### Current state
 
 Not ready for production. It's not finished, doesn't work reliably and
 its interface is not yet stable.
