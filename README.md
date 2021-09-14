@@ -1,8 +1,12 @@
 # command
 
-
 is a fork of the [shell] external from Günter Geiger's [ggee](https://github.com/pd-externals/ggee)
 library.
+
+# Current state
+
+Not ready for production. It's not finished, doesn't work reliably and
+its interface is not yet stable.
 
 It provides a way to execute commands from Pd. Its goal is to
 give more fine-grained control over the process it manages. Unlike
