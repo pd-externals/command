@@ -5,6 +5,7 @@
 
 #include <m_pd.h>
 
+#include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -276,7 +277,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         }
         freebytes(argv, (ac+1) * sizeof(char*));
 
-	exit(0);
+	exit(errno);
     }
     x->x_del = 4;
     clock_delay(x->x_clock,x->x_del);
