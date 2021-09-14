@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <poll.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
@@ -80,24 +81,6 @@ void command_cleanup(t_command* x)
     x->fd_stderr_pipe[0] = -1;
     x->fd_stderr_pipe[1] = -1;
     clock_unset(x->x_clock);
-}
-
-void command_check(t_command* x)
-{
-    int ret;
-    int status;
-    ret = waitpid(x->pid,&status,WNOHANG);
-    if (ret == x->pid) {
-        command_cleanup(x);
-        if (WIFEXITED(status)) {
-            outlet_float(x->x_done,WEXITSTATUS(status));
-        }
-        else outlet_float(x->x_done,0);
-    }
-    else {
-        if (x->x_del < 100) x->x_del+=2; /* increment poll times */
-        clock_delay(x->x_clock,x->x_del);
-    }
 }
 
 /* snippet from pd's code */
@@ -180,6 +163,30 @@ void command_read(t_command *x, int fd)
         }
     }
     binbuf_free(bbuf);
+}
+
+void command_check(t_command* x)
+{
+    int ret;
+    int status;
+    ret = waitpid(x->pid,&status,WNOHANG);
+    if (ret == x->pid) {
+        if(poll(&(struct pollfd){ .fd = x->fd_stdout_pipe[0], .events = POLLIN }, 1, 0)==1)  {
+            command_read(x, x->fd_stdout_pipe[0]);
+        }
+        if(poll(&(struct pollfd){ .fd = x->fd_stderr_pipe[0], .events = POLLIN }, 1, 0)==1)  {
+            command_read(x, x->fd_stderr_pipe[0]);
+        }
+        if (WIFEXITED(status)) {
+            outlet_float(x->x_done,WEXITSTATUS(status));
+        }
+        else outlet_float(x->x_done,0);
+        command_cleanup(x);
+    }
+    else {
+        if (x->x_del < 100) x->x_del+=2; /* increment poll times */
+        clock_delay(x->x_clock,x->x_del);
+    }
 }
 
 static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
