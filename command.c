@@ -200,7 +200,8 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     if (x->fd_stdin_pipe[0] == -1) return; /* nothing to send to */
 
     for (i=0;i<ac;i++) {
-        command_atom2string(at,tmp+size,MAXPDSTRING - size);
+        tmp[size]=0;
+        command_atom2string(at, tmp+size, MAXPDSTRING-size);
         at++;
         size=strlen(tmp);
         tmp[size++] = ' ';
