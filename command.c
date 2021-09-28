@@ -56,6 +56,7 @@ typedef struct _command
     int fd_stderr_pipe[2];
     int pid;
     int x_del;
+    int x_bin;
     t_outlet* x_done;
     t_outlet* x_stdout;
     t_outlet* x_stderr;
@@ -306,7 +307,7 @@ void command_kill(t_command *x)
     }
 }
 
-static void *command_new(void)
+static void *command_new(t_symbol *s, int argc, t_atom *argv)
 {
     t_command *x = (t_command *)pd_new(command_class);
 
@@ -322,13 +323,38 @@ static void *command_new(void)
     x->x_stderr = outlet_new(&x->x_obj, 0);
     x->x_clock = clock_new(x, (t_method) command_check);
     x->path = canvas_getdir(canvas_getcurrent());
+
+    // check for -b flag (binary output)
+
+   if (argc && argv->a_type == A_FLOAT)
+    {
+        x->x_bin = 0;
+        argc = 0;
+    }
+    else while (argc && argv->a_type == A_SYMBOL &&
+        *argv->a_w.w_symbol->s_name == '-')
+    {
+        if (!strcmp(argv->a_w.w_symbol->s_name, "-b"))
+            x->x_bin = 1;
+        else
+        {
+            pd_error(x, "command: unknown flag:");
+            postatom(argc, argv); endpost();
+        }
+        argc--; argv++;
+    }
+    if (argc)
+    {
+        pd_error(x, "command: extra arguments ignored:");
+        postatom(argc, argv); endpost();
+    }
     return (x);
 }
 
 void command_setup(void)
 {
     command_class = class_new(gensym("command"), (t_newmethod)command_new,
-                        (t_method)command_free,sizeof(t_command), 0,0);
+                        (t_method)command_free,sizeof(t_command), 0, A_GIMME, 0);
     class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
     class_addmethod(command_class, (t_method)command_exec, gensym("exec"),
         A_GIMME, 0);
