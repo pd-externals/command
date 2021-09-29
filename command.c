@@ -85,7 +85,7 @@ void command_cleanup(t_command* x)
     clock_unset(x->x_clock);
 }
 
-/* snippet from pd's code */
+// snippet from pd's x_misc.c:fudiparse_binbufout
 static void command_doit(void *z, t_binbuf *b, t_outlet *outlet)
 {
     t_command *x = (t_command *)z;
@@ -125,46 +125,63 @@ static void command_doit(void *z, t_binbuf *b, t_outlet *outlet)
 
 void command_read(t_command *x, int fd)
 {
-    char buf[INBUFSIZE];
-    t_binbuf* bbuf = binbuf_new();
-    int i;
-    int ret;
+    // text output mode
+    if (x->x_bin == 0) {
+        char buf[INBUFSIZE];
+        t_binbuf* bbuf = binbuf_new();
+        int i;
+        int ret;
 
-    ret = read(fd, buf,INBUFSIZE-1);
-    buf[ret] = '\0';
+        ret = read(fd, buf,INBUFSIZE-1);
+        buf[ret] = '\0';
 
-    for (i=0;i<ret;i++)
-        if (buf[i] == '\n') buf[i] = ';';
-    if (buf[i] == 'M') buf[i] = 'X';
-    if (ret < 0)
-    {
-        pd_error(x, "pipe read error");
-        sys_rmpollfn(fd);
-        x->fd_stdout_pipe[0] = -1;
-        close(fd);
-        return;
+        for (i=0;i<ret;i++)
+            if (buf[i] == '\n') buf[i] = ';';
+        if (buf[i] == 'M') buf[i] = 'X';
+        if (ret < 0)
+        {
+            pd_error(x, "pipe read error");
+            sys_rmpollfn(fd);
+            x->fd_stdout_pipe[0] = -1;
+            close(fd);
+            return;
+        }
+        else if (ret == 0)
+        {
+            post("EOF on socket %d\n", fd);
+            sys_rmpollfn(fd);
+            x->fd_stdout_pipe[0] = -1;
+            close(fd);
+            return;
+        }
+        else
+        {
+            binbuf_text(bbuf, buf, strlen(buf));
+            if (fd == x->fd_stdout_pipe[0])
+            {
+                command_doit(x,bbuf,x->x_stdout);
+            }
+            else if (fd == x->fd_stderr_pipe[0])
+            {
+                command_doit(x,bbuf,x->x_stderr);
+            }
+        }
+        binbuf_free(bbuf);
     }
-    else if (ret == 0)
-    {
-        post("EOF on socket %d\n", fd);
-        sys_rmpollfn(fd);
-        x->fd_stdout_pipe[0] = -1;
-        close(fd);
-	return;
-    }
-    else
-    {
-	binbuf_text(bbuf, buf, strlen(buf));
+    // binary output mode
+    else {
+        char buf[INBUFSIZE];
+        int outc, n;
+        outc = read(fd, buf,INBUFSIZE-1);
+        t_atom *outv = (t_atom *)getbytes(outc * sizeof(t_atom));
+        for (n = 0; n < outc; n++)
+            SETFLOAT(outv + n, (unsigned char)buf[n]);
         if (fd == x->fd_stdout_pipe[0])
-        {
-            command_doit(x,bbuf,x->x_stdout);
-        }
-        else if (fd == x->fd_stderr_pipe[0])
-        {
-            command_doit(x,bbuf,x->x_stderr);
-        }
+            outlet_list(x->x_stdout, &s_list, outc, outv);
+        if (fd == x->fd_stderr_pipe[0])
+            outlet_list(x->x_stderr, &s_list, outc, outv);
+        freebytes(outv, outc * sizeof(t_atom));
     }
-    binbuf_free(bbuf);
 }
 
 void command_check(t_command* x)
@@ -325,8 +342,8 @@ static void *command_new(t_symbol *s, int argc, t_atom *argv)
     x->path = canvas_getdir(canvas_getcurrent());
 
     // check for -b flag (binary output)
-
-   if (argc && argv->a_type == A_FLOAT)
+    // snippet from Pd's x_net.c
+    if (argc && argv->a_type == A_FLOAT)
     {
         x->x_bin = 0;
         argc = 0;
