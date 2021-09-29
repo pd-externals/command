@@ -1,0 +1,9 @@
+#N canvas 237 141 429 42 10;
+#N canvas 479 242 468 230 META 0;
+#X text 12 25 LICENSE Tcl/Tk;
+#X text 12 5 KEYWORDS control command system;
+#X text 12 45 DESCRIPTION run commands;
+#X text 12 86 AUTHOR Günger Geiger;
+#X text 12 106 AUTHOR Roman Haefeli;
+#X text 11 65 VERSION 0.1;
+#X restore 6 5 pd META;
