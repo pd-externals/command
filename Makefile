@@ -5,6 +5,7 @@ lib.name = command
 class.sources = command.c
 
 datafiles = command-help.pd \
+            command-meta.pd \
             LICENSE.txt \
             README.md
 
