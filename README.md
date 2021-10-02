@@ -31,10 +31,9 @@ shell scripts that can be executed with [command].
 
 2002 - 2006 Guenter Geiger <geiger@xdv.org>  
 2005 - 2010 Hans-Christoph Steiner <hans@eds.org>  
-2008 - 2017 IOhannes m zmölnig <zmoelnig@iem.at>  
+2008 - 2021 IOhannes m zmölnig <zmoelnig@iem.at>  
 2019        jyg <jyg@gumo.fr>  
 2021        Roman Haefeli <reduzent@gmail.com>  
-2021        IOhannes m zmölnig <zmoelnig@iem.at>  
 
 ## License
 
