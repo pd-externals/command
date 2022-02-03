@@ -110,8 +110,8 @@ static void command_doit(void *z, t_binbuf *b, t_outlet *outlet)
             if (at[msg].a_type == A_FLOAT)
             {
                 if (emsg > msg + 1)
-                    outlet_list(x->x_obj.ob_outlet,  0, emsg-msg, at + msg);
-                else outlet_float(x->x_obj.ob_outlet,  at[msg].a_w.w_float);
+                    outlet_list(outlet,  0, emsg-msg, at + msg);
+                else outlet_float(outlet,  at[msg].a_w.w_float);
             }
 	    else if (at[msg].a_type == A_SYMBOL)
                 outlet_anything(outlet,  at[msg].a_w.w_symbol,
