@@ -1,0 +1,12 @@
+name: pd-lib-builder
+
+on:
+  # Trigger the workflow on push or pull request,
+  # or via the webinterface
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pd-lib-builder:
+    uses: pure-data/pure-data-ci/.github/workflows/pd-lib-builder.yml@main
