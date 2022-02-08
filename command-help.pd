@@ -112,7 +112,6 @@ executing another command.;
 #X text 165 737 <- we get error from 'ls' command;
 #X text 699 74 <- quotes are not parsed;
 #X text 499 99 is interpreted as:;
-#X text 518 117 'python3' '-c' '"import' 'sys \; ' 'sys.exit(4)"';
 #X text 438 174 However \, this works:;
 #X text 437 35 [command] executes raw commands and does not invoke
 a shell to run commands. Typical shell features are not available.
@@ -148,6 +147,8 @@ is split into lists at spaces \, while numeric values are converted
 to floats and other values to symbols. If this automatic conversion
 is not desired \, the -b option is used to output the results as a
 list of bytes. This keeps the original representation intact.;
+#X text 518 117 'python3' '-c' '"import' 'sys\\\; ' 'sys.exit(4)"'
+;
 #X connect 3 1 4 1;
 #X connect 4 0 7 0;
 #X connect 5 0 4 0;
@@ -177,17 +178,17 @@ list of bytes. This keeps the original representation intact.;
 #X connect 37 0 29 0;
 #X connect 39 0 40 0;
 #X connect 39 2 41 0;
-#X connect 53 0 54 0;
-#X connect 53 2 55 0;
-#X connect 56 0 39 0;
-#X connect 57 0 53 0;
-#X connect 62 0 63 0;
-#X connect 63 1 64 0;
-#X connect 65 0 66 0;
-#X connect 66 1 68 0;
-#X connect 68 0 67 0;
-#X connect 72 1 74 0;
-#X connect 73 0 72 0;
+#X connect 52 0 53 0;
+#X connect 52 2 54 0;
+#X connect 55 0 39 0;
+#X connect 56 0 52 0;
+#X connect 61 0 62 0;
+#X connect 62 1 63 0;
+#X connect 64 0 65 0;
+#X connect 65 1 67 0;
+#X connect 67 0 66 0;
+#X connect 71 1 73 0;
+#X connect 72 0 71 0;
 #X restore 394 463 pd more usage information;
 #X connect 3 0 4 0;
 #X connect 4 0 28 0;
