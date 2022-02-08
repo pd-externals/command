@@ -13,13 +13,14 @@ shell scripts that can be executed with [command].
 
 ## Features
 
+  * runs asynchronously (without blocking Pd)
   * `kill` method for sending SIGINT to currently running command.
   * `send` method for sending data to STDIN of currently running command.
   * separate outlet for STDERR of command.
-  * report exit code on left-most outlet.
-  * use dedicated method `exec` for command execution to avoid conflicts
+  * reports exit code on left-most outlet.
+  * uses dedicated method `exec` for command execution to avoid conflicts
     between command and method names.
-  * search relative to patch instead of relative to Pd when calling
+  * searches relative to patch instead of relative to Pd when calling
     commands with relative path. This makes projects using custom scripts
     or binaries more portable.
   * `-b` flag for binary output. This can be used to bypass FUDI parsing.
