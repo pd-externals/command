@@ -188,6 +188,7 @@ void command_check(t_command* x)
 {
     int ret;
     int status;
+    int retval = 0;
     ret = waitpid(x->pid,&status,WNOHANG);
     if (ret == x->pid) {
         if(poll(&(struct pollfd){ .fd = x->fd_stdout_pipe[0], .events = POLLIN }, 1, 0)==1)  {
@@ -196,11 +197,10 @@ void command_check(t_command* x)
         if(poll(&(struct pollfd){ .fd = x->fd_stderr_pipe[0], .events = POLLIN }, 1, 0)==1)  {
             command_read(x, x->fd_stderr_pipe[0]);
         }
-        if (WIFEXITED(status)) {
-            outlet_float(x->x_done,WEXITSTATUS(status));
-        }
-        else outlet_float(x->x_done,0);
+        if (WIFEXITED(status))
+            retval = WEXITSTATUS(status);
         command_cleanup(x);
+        outlet_float(x->x_done, retval);
     }
     else {
         if (x->x_del < 100) x->x_del+=2; /* increment poll times */
