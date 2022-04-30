@@ -148,7 +148,7 @@ void command_read(t_command *x, int fd)
         }
         else if (ret == 0)
         {
-            post("EOF on socket %d\n", fd);
+            pd_error(x, "EOF on socket %d\n", fd);
             sys_rmpollfn(fd);
             x->fd_stdout_pipe[0] = -1;
             close(fd);
@@ -237,7 +237,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     (void)s; // suppress warning
 
     if (x->fd_stdout_pipe[0] != -1) {
-        post("old process still running");
+        pd_error(x, "old process still running");
         return;
     }
 
