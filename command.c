@@ -56,7 +56,8 @@ typedef struct _command
     int fd_stderr_pipe[2];
     int pid;
     int x_del;
-    int x_bin;
+    int x_bin;  // -b flag: binary output
+    int x_sync; // -s flag: synchronous (blocking) mode of operation
     t_outlet* x_done;
     t_outlet* x_stdout;
     t_outlet* x_stderr;
@@ -298,8 +299,27 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 
 	exit(errno);
     }
-    x->x_del = 4;
-    clock_delay(x->x_clock,x->x_del);
+    // should we wait for command to return (blocking mode / -s) or
+    // should we schedule a check for later (non-blocking mode)?
+    if (x->x_sync)
+    {
+        int status;
+        int retval = -1;
+        waitpid(x->pid, &status, 0);
+        if(poll(&(struct pollfd){ .fd = x->fd_stdout_pipe[0], .events = POLLIN }, 1, 0)==1)  {
+            command_read(x, x->fd_stdout_pipe[0]);
+        }
+        if(poll(&(struct pollfd){ .fd = x->fd_stderr_pipe[0], .events = POLLIN }, 1, 0)==1)  {
+            command_read(x, x->fd_stderr_pipe[0]);
+        }
+        if (WIFEXITED(status))
+            retval = WEXITSTATUS(status);
+        command_cleanup(x);
+        outlet_float(x->x_done, retval);
+    } else {
+        x->x_del = 4;
+        clock_delay(x->x_clock,x->x_del);
+    }
 }
 
 void command_free(t_command* x)
@@ -343,17 +363,24 @@ static void *command_new(t_symbol *s, int argc, t_atom *argv)
     x->path = canvas_getdir(canvas_getcurrent());
 
     // check for -b flag (binary output)
+    // and for -s flag (synchron mode)
     // snippet from Pd's x_net.c
     if (argc && argv->a_type == A_FLOAT)
     {
         x->x_bin = 0;
+        x->x_sync = 0;
         argc = 0;
     }
     else while (argc && argv->a_type == A_SYMBOL &&
         *argv->a_w.w_symbol->s_name == '-')
     {
         if (!strcmp(argv->a_w.w_symbol->s_name, "-b"))
+        {
             x->x_bin = 1;
+        } else if (!strcmp(argv->a_w.w_symbol->s_name, "-s"))
+        {
+            x->x_sync = 1;
+        }
         else
         {
             pd_error(x, "command: unknown flag:");
