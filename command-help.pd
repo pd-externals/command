@@ -1,4 +1,4 @@
-#N canvas 243 26 803 645 10;
+#N canvas 243 26 803 701 10;
 #N canvas 479 242 468 230 META 0;
 #X text 12 45 INLET_0 anything;
 #X text 12 65 OUTLET_0 anything;
@@ -6,30 +6,27 @@
 #X text 12 25 DESCRIPTION run commands;
 #X text 12 85 OUTLET_1 anything;
 #X text 12 105 OUTLET_2 anything;
-#X restore 741 617 pd META;
-#X obj 1 1 cnv 15 800 30 empty empty empty 20 12 0 14 #e0e0e0 #404040
-0;
+#X restore 741 667 pd META;
+#X obj 1 1 cnv 15 800 30 empty empty empty 20 12 0 14 #e0e0e0 #404040 0;
 #X text 12 7 command - execute commands or scripts from Pd;
 #X msg 14 70 exec ls;
 #X obj 14 148 command;
 #X text 81 71 exec method invokes comand;
 #X msg 25 97 exec ls -lh command-help.pd;
 #X msg 36 123 exec ls -lh nosuchfile;
-#X obj 14 378 command;
-#X msg 14 320 exec sleep 5;
-#X msg 61 346 kill;
-#X text 98 346 and can be interrupted;
+#X obj 14 338 command;
+#X msg 14 280 exec sleep 5;
+#X msg 61 306 kill;
+#X text 98 306 and can be interrupted;
 #X obj 394 188 command;
 #X msg 394 67 exec telnet netpd.org 80;
-#X msg 416 161 send GET /index.html HTTP/1.0\$1Hostname: netpd.org\$1\$1
-;
+#X msg 416 161 send GET /index.html HTTP/1.0\$1Hostname: netpd.org\$1\$1;
 #X obj 416 137 list tosymbol;
 #X msg 416 114 10;
-#X obj 416 93 bng 15 250 50 0 empty empty empty 17 7 0 10 #fcfcfc #000000
-#000000;
+#X obj 416 93 bng 15 250 50 0 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000;
 #X text 501 136 <- newline;
 #X text 12 46 exec - execute command;
-#X text 11 293 kill - kill currently running command;
+#X text 11 253 kill - kill currently running command;
 #X text 374 42 send - send something to stdin of command;
 #X text 370 90 2) -->;
 #X text 370 67 1);
@@ -40,28 +37,27 @@
 #X obj 14 221 print LS_EXIT;
 #X obj 33 197 print LS_STDOUT;
 #X obj 53 173 print LS_STDERR;
-#X obj 14 451 print SLEEP_EXIT;
-#X obj 33 427 print SLEEP_STDOUT;
-#X obj 53 403 print SLEEP_STDERR;
+#X obj 14 411 print SLEEP_EXIT;
+#X obj 33 387 print SLEEP_STDOUT;
+#X obj 53 363 print SLEEP_STDERR;
 #X obj 394 261 print TELNET_EXIT;
 #X obj 413 237 print TELNET_STDOUT;
 #X obj 433 213 print TELNET_STDERR;
-#X obj 16 546 command -b;
-#X obj 44 572 print BIN_STDOUT;
-#X msg 16 523 exec echo -n abc d;
-#X text 95 322 commands are not blocking;
-#X text 14 498 -b - binary output for bypassing FUDI parsing;
-#X text 392 567 outlet0: exit code;
-#X text 392 587 outlet1: stdout;
-#X text 392 607 outlet2: stderr;
-#X text 392 504 SYNOPSIS:;
-#X text 391 527 flags:;
-#X text 409 547 -b: binary output (optional);
+#X obj 16 493 command -b;
+#X obj 44 519 print BIN_STDOUT;
+#X msg 16 470 exec echo -n abc d;
+#X text 95 282 commands are not blocking;
+#X text 14 445 -b - binary output for bypassing FUDI parsing;
+#X text 392 617 outlet0: exit code;
+#X text 392 637 outlet1: stdout;
+#X text 392 657 outlet2: stderr;
+#X text 392 534 SYNOPSIS:;
+#X text 391 557 flags:;
+#X text 409 577 -b: binary output (optional);
 #N canvas 524 26 873 777 more 0;
 #X text 13 7 Breaking order of execution;
 #X text 13 17 ---------------------------;
-#X text 13 37 The non-blocking nature of [command] breaks order of
-execution. Something like this gives unexpected results:;
+#X text 13 37 The non-blocking nature of [command] breaks order of execution. Something like this gives unexpected results:;
 #X obj 44 149 command;
 #X obj 17 171 f;
 #X obj 17 102 t b a;
@@ -86,11 +82,8 @@ execution. Something like this gives unexpected results:;
 #X obj 20 529 command;
 #X obj 20 552 print EXIT;
 #X msg 20 506 exec sleep 0.5 \, exec ls non-existing-file;
-#X text 17 451 [command] runs exactly one command at the time. Executing
-another command while the current is still running triggers an error
-and the new command is ignored:;
-#X text 19 581 Make sure to wait for the exit code to be reported before
-executing another command.;
+#X text 17 451 [command] runs exactly one command at the time. Executing another command while the current is still running triggers an error and the new command is ignored:;
+#X text 19 581 Make sure to wait for the exit code to be reported before executing another command.;
 #X obj 20 674 command;
 #X obj 20 737 print EXIT;
 #X obj 86 552 print STDERR;
@@ -111,15 +104,12 @@ executing another command.;
 #X text 699 74 <- quotes are not parsed;
 #X text 499 99 is interpreted as:;
 #X text 438 174 However \, this works:;
-#X text 437 35 [command] executes raw commands and does not invoke
-a shell to run commands. Typical shell features are not available.
-;
+#X text 437 35 [command] executes raw commands and does not invoke a shell to run commands. Typical shell features are not available.;
 #X obj 440 229 command;
 #X obj 440 262 print EXIT;
 #X obj 506 262 print STDERR;
 #X msg 440 76 exec python3 -c "import sys\\\; sys.exit(4)";
-#X msg 440 196 exec python3 -c import\\\ sys\\\;\\\ sys.exit(4), f
-44;
+#X msg 440 196 exec python3 -c import\\\ sys\\\;\\\ sys.exit(4), f 44;
 #X text 509 218 spaces within a command arg need to be escaped.;
 #X text 510 236 semicolons need to be escaped in message boxes.;
 #X text 437 398 Preserve exact output;
@@ -131,22 +121,15 @@ a shell to run commands. Typical shell features are not available.
 #X obj 441 682 command -b;
 #X symbolatom 469 733 16 0 0 0 - - - 0;
 #X obj 469 708 list tosymbol;
-#X text 440 516 Number is too big for keeping all digits intact in
-Pd's float format:;
+#X text 440 516 Number is too big for keeping all digits intact in Pd's float format:;
 #X text 572 733 <- cannot be used for calculations;
 #X text 440 636 As a symbol \, all digits are kept intact:;
 #X obj 440 345 command;
 #X msg 440 322 exec bash -c echo\\\ $HOME;
 #X obj 459 367 print $HOME;
-#X text 439 288 You can still use shell features by wrapping the command
-into a shell:;
-#X text 437 424 By default \, stdout and stderr are FUDI parsed: output
-is split into lists at spaces \, while numeric values are converted
-to floats and other values to symbols. If this automatic conversion
-is not desired \, the -b option is used to output the results as a
-list of bytes. This keeps the original representation intact.;
-#X text 518 117 'python3' '-c' '"import' 'sys\\\; ' 'sys.exit(4)"'
-;
+#X text 439 288 You can still use shell features by wrapping the command into a shell:;
+#X text 437 424 By default \, stdout and stderr are FUDI parsed: output is split into lists at spaces \, while numeric values are converted to floats and other values to symbols. If this automatic conversion is not desired \, the -b option is used to output the results as a list of bytes. This keeps the original representation intact.;
+#X text 518 117 'python3' '-c' '"import' 'sys\\\; ' 'sys.exit(4)"';
 #X connect 3 1 4 1;
 #X connect 4 0 7 0;
 #X connect 5 0 4 0;
@@ -186,7 +169,14 @@ list of bytes. This keeps the original representation intact.;
 #X connect 65 0 64 0;
 #X connect 69 1 71 0;
 #X connect 70 0 69 0;
-#X restore 394 463 pd more usage information;
+#X restore 394 493 pd more usage information;
+#X text 14 545 -s - synchronous (blocking) operation;
+#X msg 64 587 exec date;
+#X obj 16 635 print SYNC;
+#X obj 16 595 t b b;
+#X obj 16 571 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X obj 64 610 command -s;
+#X text 409 597 -s: synchronous operation (optional);
 #X connect 3 0 4 0;
 #X connect 4 0 28 0;
 #X connect 4 1 29 0;
@@ -210,3 +200,8 @@ list of bytes. This keeps the original representation intact.;
 #X connect 26 0 24 0;
 #X connect 37 1 38 0;
 #X connect 39 0 37 0;
+#X connect 50 0 54 0;
+#X connect 52 0 51 0;
+#X connect 52 1 50 0;
+#X connect 53 0 52 0;
+#X connect 54 1 51 0;
