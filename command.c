@@ -327,6 +327,7 @@ void command_kill(t_command *x)
 static void *command_new(t_symbol *s, int argc, t_atom *argv)
 {
     t_command *x = (t_command *)pd_new(command_class);
+    (void)s->s_name;
 
     x->fd_stdout_pipe[0] = -1; // read end
     x->fd_stdout_pipe[1] = -1; // write end
