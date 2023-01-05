@@ -23,16 +23,13 @@ Authors:
 #include <sched.h>
 
 #define CLASSNAME "command"
+#define LIBVERSION "0.4"
+#define INBUFSIZE 65536
 
 void sys_rmpollfn(int fd);
 void sys_addpollfn(int fd, void* fn, void *ptr);
 
-/* ------------------------ command ----------------------------- */
-
-#define INBUFSIZE 65536
-
 static t_class *command_class;
-
 
 static void drop_priority(void)
 {
@@ -424,6 +421,7 @@ void command_setup(void)
     class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
     class_addmethod(command_class, (t_method)command_send, gensym("send"),
         A_GIMME, 0);
+    logpost(NULL, 2, "[%s]: version %s", CLASSNAME, LIBVERSION);
 }
 
 #endif /* _WIN32 */
