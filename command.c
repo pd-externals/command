@@ -1,7 +1,13 @@
-/* (C) Guenter Geiger <geiger@epy.co.at> */
+/*
+Authors:
+    Guenter Geiger <geiger@epy.co.at>
+    Roman Haefeli <reduzent@gmail.com>
+*/
 
 /* this doesn't run on Windows (yet?) */
 #ifndef _WIN32
+
+#define _GNU_SOURCE
 
 #include <m_pd.h>
 
@@ -232,6 +238,16 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     }
 }
 
+static void command_env(t_command *x, t_symbol *var, t_symbol *val)
+{
+    if(setenv(var->s_name, val->s_name, 1) < 0)
+    {
+        pd_error(x, "[command]: setting environment variable failed. errno: %d", errno);
+    } else {
+        logpost(x, 3, "[command]: setting %s=%s", var->s_name, val->s_name);
+    }
+}
+
 static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 {
     int i;
@@ -292,6 +308,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
 	if (execvp(argv[0], argv) == -1) {
             pd_error(x, "execution failed");
         };
+
         for (i=0;i<ac;i++) {
             freebytes(argv[i], MAXPDSTRING);
         }
@@ -400,9 +417,11 @@ void command_setup(void)
 {
     command_class = class_new(gensym("command"), (t_newmethod)command_new,
                         (t_method)command_free,sizeof(t_command), 0, A_GIMME, 0);
-    class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
+    class_addmethod(command_class, (t_method)command_env, gensym("env"),
+        A_SYMBOL, A_SYMBOL, 0);
     class_addmethod(command_class, (t_method)command_exec, gensym("exec"),
         A_GIMME, 0);
+    class_addmethod(command_class, (t_method)command_kill, gensym("kill"), 0);
     class_addmethod(command_class, (t_method)command_send, gensym("send"),
         A_GIMME, 0);
 }
