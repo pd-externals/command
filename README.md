@@ -16,6 +16,7 @@ shell scripts that can be executed with [command].
   * runs asynchronously (without blocking Pd)
   * `kill` method for sending SIGINT to currently running command.
   * `send` method for sending data to STDIN of currently running command.
+  * `env` method for setting environment variables.
   * separate outlet for STDERR of command.
   * reports exit code on left-most outlet.
   * uses dedicated method `exec` for command execution to avoid conflicts
@@ -26,6 +27,8 @@ shell scripts that can be executed with [command].
   * `-b` flag for binary output. This can be used to bypass FUDI parsing.
     Useful for cases when characters like leading or trailing spaces
     should be kept.
+  * `-s` flag for synchronous mode. When enabled, command execution blocks
+    Pd while maintaining depth-first order.
 
 
 ## Authors
