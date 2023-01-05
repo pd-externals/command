@@ -6,5 +6,5 @@
 #X text 12 86 AUTHOR Günger Geiger;
 #X text 12 106 AUTHOR Roman Haefeli;
 #X text 12 126 AUTHOR IOhannes Zmoelnig;
-#X text 11 65 VERSION 0.3;
+#X text 11 65 VERSION 0.4;
 #X restore 6 5 pd META;
