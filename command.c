@@ -22,6 +22,8 @@ Authors:
 #include <signal.h>
 #include <sched.h>
 
+#define CLASSNAME "command"
+
 void sys_rmpollfn(int fd);
 void sys_addpollfn(int fd, void* fn, void *ptr);
 
@@ -51,7 +53,6 @@ static const char*command_atom2string(const t_atom*ap, char*buffer, unsigned int
   }
   return 0;
 }
-
 
 typedef struct _command
 {
@@ -111,7 +112,7 @@ static void command_doit(void *z, t_binbuf *b, t_outlet *outlet)
             for (i = msg; i < emsg; i++)
 	    	if (at[i].a_type == A_DOLLAR || at[i].a_type == A_DOLLSYM)
             {
-                pd_error(x, "got dollar sign in message");
+                pd_error(x, "[%s]: got dollar sign in message", CLASSNAME);
                 goto nodice;
             }
             if (at[msg].a_type == A_FLOAT)
@@ -128,7 +129,6 @@ static void command_doit(void *z, t_binbuf *b, t_outlet *outlet)
         msg = emsg + 1;
     }
 }
-
 
 void command_read(t_command *x, int fd)
 {
@@ -147,7 +147,7 @@ void command_read(t_command *x, int fd)
         if (buf[i] == 'M') buf[i] = 'X';
         if (ret < 0)
         {
-            pd_error(x, "pipe read error");
+            pd_error(x, "[%s]: pipe read error", CLASSNAME);
             sys_rmpollfn(fd);
             x->fd_stdout_pipe[0] = -1;
             close(fd);
@@ -155,7 +155,7 @@ void command_read(t_command *x, int fd)
         }
         else if (ret == 0)
         {
-            pd_error(x, "EOF on socket %d\n", fd);
+            pd_error(x, "[%s]: EOF on socket %d\n", CLASSNAME, fd);
             sys_rmpollfn(fd);
             x->fd_stdout_pipe[0] = -1;
             close(fd);
@@ -234,7 +234,7 @@ static void command_send(t_command *x, t_symbol *s,int ac, t_atom *at)
     tmp[size-1] = 0;
     if (write(x->fd_stdin_pipe[1],tmp,strlen(tmp)) == -1)
     {
-        pd_error(x, "writing to stdin of command failed");
+        pd_error(x, "[%s]: writing to stdin of command failed", CLASSNAME);
     }
 }
 
@@ -242,9 +242,9 @@ static void command_env(t_command *x, t_symbol *var, t_symbol *val)
 {
     if(setenv(var->s_name, val->s_name, 1) < 0)
     {
-        pd_error(x, "[command]: setting environment variable failed. errno: %d", errno);
+        pd_error(x, "[%s]: setting environment variable failed. errno: %d", CLASSNAME, errno);
     } else {
-        logpost(x, 3, "[command]: setting %s=%s", var->s_name, val->s_name);
+        logpost(x, 3, "[%s]: setting %s=%s", CLASSNAME, var->s_name, val->s_name);
     }
 }
 
@@ -254,22 +254,22 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
     (void)s; // suppress warning
 
     if (x->fd_stdout_pipe[0] != -1) {
-        pd_error(x, "old process still running");
+        pd_error(x, "[%s]: old process still running", CLASSNAME);
         return;
     }
 
     if (pipe(x->fd_stdin_pipe) == -1) {
-        pd_error(x, "unable to create stdin pipe");
+        pd_error(x, "[%s]: unable to create stdin pipe", CLASSNAME);
         return;
     }
 
     if (pipe(x->fd_stdout_pipe) == -1) {
-	pd_error(x, "unable to create stdout pipe");
+	pd_error(x, "[%s]: unable to create stdout pipe", CLASSNAME);
         return;
     }
 
     if (pipe(x->fd_stderr_pipe) == -1) {
-	pd_error(x, "unable to create stderr pipe");
+	pd_error(x, "[%s]: unable to create stderr pipe", CLASSNAME);
         return;
     }
 
@@ -292,7 +292,7 @@ static void command_exec(t_command *x, t_symbol *s, int ac, t_atom *at)
         /* lose setuid priveliges */
         if (seteuid(getuid()) == -1)
         {
-            pd_error(x, "seteuid failed");
+            pd_error(x, "[%s]: seteuid failed", CLASSNAME);
             return;
         }
         for (i=0;i<ac;i++) {
@@ -345,7 +345,7 @@ void command_free(t_command* x)
     {
         if (kill(x->pid, SIGINT) < -1)
         {
-            pd_error(x, "killing command failed");
+            pd_error(x, "[%s]: killing command failed", CLASSNAME);
         }
         command_cleanup(x);
     }
@@ -357,7 +357,7 @@ void command_kill(t_command *x)
     if (x->fd_stdin_pipe[0] == -1) return;
     if (kill(x->pid, SIGINT) < -1)
     {
-        pd_error(x, "killing command failed");
+        pd_error(x, "[%s]: killing command failed", CLASSNAME);
     }
 }
 
@@ -400,14 +400,14 @@ static void *command_new(t_symbol *s, int argc, t_atom *argv)
         }
         else
         {
-            pd_error(x, "command: unknown flag:");
+            pd_error(x, "[%s]: unknown flag", CLASSNAME);
             postatom(argc, argv); endpost();
         }
         argc--; argv++;
     }
     if (argc)
     {
-        pd_error(x, "command: extra arguments ignored:");
+        pd_error(x, "[%s]: extra arguments ignored", CLASSNAME);
         postatom(argc, argv); endpost();
     }
     return (x);
@@ -426,7 +426,4 @@ void command_setup(void)
         A_GIMME, 0);
 }
 
-
 #endif /* _WIN32 */
-
-
