@@ -23,7 +23,7 @@ Authors:
 #include <sched.h>
 
 #define CLASSNAME "command"
-#define LIBVERSION "0.4"
+#define LIBVERSION "0.5"
 #define INBUFSIZE 65536
 
 void sys_rmpollfn(int fd);
